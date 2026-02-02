@@ -1,0 +1,53 @@
+services:
+  database:
+    image: postgres:17-alpine
+    container_name: tasks-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tasks
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tasks-network
+
+  backend:
+    build: ./backend
+    container_name: tasks-backend
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: tasks
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - tasks-network
+
+  frontend:
+    build: ./frontend
+    container_name: tasks-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - tasks-network
+
+volumes:
+  db_data:
+
+networks:
+  tasks-network:

@@ -1,0 +1,43 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+
+  pre_build:
+    commands:
+      - echo "Build started on $(date)"
+      - echo "Getting API URL from SSM..."
+      - export REACT_APP_API_URL=$(aws ssm get-parameter --name /tasks-app/prod/api-url --query Parameter.Value --output text --region us-east-1)
+      - echo "API URL - $REACT_APP_API_URL"
+      - echo "Installing dependencies..."
+      - cd tasks-app/frontend
+      - npm install
+
+  build:
+    commands:
+      - echo "Building React application..."
+      - export NODE_OPTIONS=--openssl-legacy-provider
+      - npm run build
+      - echo "Build completed on $(date)"
+
+  post_build:
+    commands:
+      - echo "Deploying to S3..."
+      - aws s3 sync build/ s3://$S3_BUCKET_NAME --delete
+      - cd ../..
+      - echo "Frontend deployment completed!"
+
+artifacts:
+  files:
+    - tasks-app/frontend/build/**/*
+  base-directory: .
+
+env:
+  variables:
+    NODE_ENV: production
+    GENERATE_SOURCEMAP: "false"
+    CI: "false"
+  parameter-store:
+    S3_BUCKET_NAME: /tasks-app/frontend/s3-bucket

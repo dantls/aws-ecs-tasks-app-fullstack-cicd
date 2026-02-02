@@ -1,0 +1,61 @@
+{
+    "family": "task-def-alb-tasks",
+    "executionRoleArn": "arn:aws:iam::219315608868:role/ecsTaskExecutionRole",
+    "networkMode": "bridge",
+    "requiresCompatibilities": [
+        "EC2"
+    ],
+    "cpu": "1024",
+    "containerDefinitions": [
+        {
+            "name": "tasks",
+            "image": "219315608868.dkr.ecr.us-east-1.amazonaws.com/tasks-app:IMAGE_TAG",
+            "cpu": 1024,
+            "memoryReservation": 512,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 0,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "DB_USERNAME",
+                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-username"
+                },
+                {
+                    "name": "DB_PASSWORD",
+                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-password"
+                },
+                {
+                    "name": "DB_HOST",
+                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-host"
+                },
+                {
+                    "name": "DB_NAME",
+                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-name"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/task-def-alb-tasks",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "systemControls": []
+        }
+    ]
+}
