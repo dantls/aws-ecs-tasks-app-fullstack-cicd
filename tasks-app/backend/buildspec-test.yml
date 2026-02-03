@@ -6,6 +6,7 @@ phases:
       nodejs: 18
     commands:
       - echo "Installing dependencies..."
+      - cd tasks-app/backend
       - npm ci
   
   build:
@@ -17,10 +18,10 @@ phases:
 reports:
   jest_reports:
     files:
-      - 'coverage/clover.xml'
+      - 'tasks-app/backend/coverage/clover.xml'
     file-format: 'CLOVERXML'
 
 artifacts:
   files:
-    - coverage/**/*
+    - tasks-app/backend/coverage/**/*
   name: test-coverage-report
