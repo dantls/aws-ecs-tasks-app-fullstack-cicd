@@ -4,10 +4,10 @@
   "description": "### Período do evento: 04 a 07 de Outubro/2021 (Online e ao vivo às 20h)",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test": "jest __tests__/unit",
+    "test:watch": "jest __tests__/unit --watch",
+    "test:coverage": "jest __tests__/unit --coverage",
+    "test:ci": "jest __tests__/unit --ci --coverage --maxWorkers=2",
     "start": "node index.js"
   },
   "repository": {
