@@ -9,7 +9,7 @@
     "containerDefinitions": [
         {
             "name": "tasks",
-            "image": "219315608868.dkr.ecr.us-east-1.amazonaws.com/tasks-app:IMAGE_TAG",
+            "image": "219315608868.dkr.ecr.us-east-1.amazonaws.com/tasks-app-repo:IMAGE_TAG",
             "cpu": 1024,
             "memoryReservation": 512,
             "portMappings": [
@@ -31,19 +31,19 @@
             "secrets": [
                 {
                     "name": "DB_USERNAME",
-                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-username"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:219315608868:secret:tasks-app/prod-ci-cd/database:username::"
                 },
                 {
                     "name": "DB_PASSWORD",
-                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-password"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:219315608868:secret:tasks-app/prod-ci-cd/database:password::"
                 },
                 {
                     "name": "DB_HOST",
-                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-host"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:219315608868:secret:tasks-app/prod-ci-cd/database:host::"
                 },
                 {
                     "name": "DB_NAME",
-                    "valueFrom": "arn:aws:ssm:us-east-1:219315608868:parameter/tasks-app/prod/db-name"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:219315608868:secret:tasks-app/prod-ci-cd/database:dbname::"
                 }
             ],
             "logConfiguration": {
