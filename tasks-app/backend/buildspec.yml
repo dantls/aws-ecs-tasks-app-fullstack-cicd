@@ -3,6 +3,11 @@ version: 0.2
 phases:
   pre_build:
     commands:
+      - echo "🔴 BUILD PAUSADO PARA DEBUG 🔴"
+      - echo "Conecte via Session Manager agora!"
+      - echo "Você tem 10 minutos para rodar migrations"
+      - echo "Comandos: cd tasks-app/backend && npm install && node migrations/create-tables.js"
+      - sleep 600
       - echo "Build started on $(date)"
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
