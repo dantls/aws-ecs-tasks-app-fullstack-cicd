@@ -6,7 +6,7 @@ phases:
       - echo "BUILD PAUSADO PARA DEBUG"
       - echo "Conecte via Session Manager agora"
       - echo "Voce tem 10 minutos para rodar migrations"
-      - echo "Comandos cd tasks-app/backend && npm install && node migrations/create-tables.js"
+      - echo "Comandos cd tasks-app/backend && npm install && npx sequelize-cli db:migrate"
       - sleep 600
       - echo "Build started on $(date)"
       - echo "Logging in to Amazon ECR..."
