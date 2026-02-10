@@ -6,5 +6,11 @@
     "host": "database",
     "port": 5432,
     "dialect": "postgres"
+  },
+  "production": {
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": false
+    }
   }
 }
