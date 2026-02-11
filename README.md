@@ -1,598 +1,361 @@
-# Tasks Application - Full Stack CI/CD on AWS
+# 🚀 Tasks App - Full Stack CI/CD on AWS ECS
 
-Complete full-stack application with automated CI/CD pipeline deploying to AWS ECS (backend) and S3 (frontend).
+A production-ready task management application with automated CI/CD pipeline, deployed on AWS using ECS (EC2 launch type), Application Load Balancer, and RDS PostgreSQL.
 
-## Architecture Overview
+## 📋 Table of Contents
+
+- [Architecture](#-architecture)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Infrastructure](#-infrastructure)
+- [Getting Started](#-getting-started)
+- [CI/CD Pipeline](#-cicd-pipeline)
+- [Database Migrations](#-database-migrations)
+- [Monitoring](#-monitoring)
+- [Cost Optimization](#-cost-optimization)
+
+## 🏗️ Architecture
 
 ```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│   GitHub    │─────▶│ CodePipeline │─────▶│  CodeBuild  │
-│ Repository  │      │              │      │  (Backend)  │
-└─────────────┘      └──────────────┘      └──────┬──────┘
-                            │                      │
-                            │                      ▼
-                            │              ┌─────────────┐
-                            │              │     ECR     │
-                            │              │   (Docker)  │
-                            │              └──────┬──────┘
-                            │                     │
-                            │                     ▼
-                            │              ┌─────────────┐
-                            │              │     ECS     │
-                            │              │  (Backend)  │
-                            │              └──────┬──────┘
-                            │                     │
-                            ▼                     ▼
-                     ┌──────────────┐     ┌─────────────┐
-                     │  CodeBuild   │     │     ALB     │
-                     │  (Frontend)  │     │  (Public)   │
-                     └──────┬───────┘     └─────────────┘
-                            │
-                            ▼
-                     ┌──────────────┐
-                     │      S3      │
-                     │  (Frontend)  │
-                     └──────────────┘
+┌─────────────┐
+│   GitHub    │
+│  Repository │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│              AWS CodePipeline                            │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │  Source  │─▶│ Build Backend│─▶│Build Frontend│     │
+│  └──────────┘  └──────────────┘  └──────────────┘     │
+└─────────────────────────────────────────────────────────┘
+       │                    │                │
+       ▼                    ▼                ▼
+┌─────────────┐    ┌──────────────┐   ┌──────────┐
+│     ECR     │    │  ECS Cluster │   │    S3    │
+│  (Backend)  │    │  (EC2 Type)  │   │(Frontend)│
+└─────────────┘    └──────┬───────┘   └──────────┘
+                          │
+                          ▼
+                   ┌─────────────┐
+                   │     ALB     │
+                   │  (Port 80)  │
+                   └──────┬──────┘
+                          │
+                          ▼
+                   ┌─────────────┐
+                   │     RDS     │
+                   │ PostgreSQL  │
+                   └─────────────┘
 ```
 
-## Technology Stack
+## ✨ Features
 
-### Backend
-- **Runtime**: Node.js 18 (Alpine)
-- **Framework**: Express.js
-- **Database**: PostgreSQL (RDS)
-- **Container**: Docker
-- **Hosting**: AWS ECS (EC2 launch type)
-- **Load Balancer**: Application Load Balancer
-- **Image Registry**: Amazon ECR
+- ✅ **Full Stack Application**: React frontend + Node.js/Express backend
+- ✅ **Automated CI/CD**: GitHub → CodePipeline → ECS deployment
+- ✅ **High Availability**: Multi-AZ deployment with Application Load Balancer
+- ✅ **Database Migrations**: Sequelize ORM with automated migrations
+- ✅ **Security**: VPC isolation, Security Groups, Secrets Manager
+- ✅ **Scalability**: Auto Scaling Groups for ECS instances
+- ✅ **Monitoring**: CloudWatch Logs integration
+
+## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: React 18
-- **Build Tool**: Create React App
-- **Hosting**: Amazon S3 (Static Website)
-- **State Management**: React Hooks
+- React 18
+- Axios for API calls
+- Hosted on S3 Static Website
 
-### CI/CD
-- **Source Control**: GitHub
-- **Pipeline**: AWS CodePipeline
-- **Build**: AWS CodeBuild
-- **Deployment**: Automated (ECS + S3)
+### Backend
+- Node.js 18
+- Express.js
+- Sequelize ORM
+- PostgreSQL
+- Docker containerized
 
-## Project Structure
+### Infrastructure
+- **Compute**: ECS (EC2 launch type)
+- **Load Balancer**: Application Load Balancer
+- **Database**: RDS PostgreSQL
+- **Storage**: ECR (Docker images), S3 (frontend)
+- **CI/CD**: CodePipeline, CodeBuild
+- **Secrets**: AWS Secrets Manager
+- **Networking**: VPC with public/private subnets, NAT Gateway, VPC Endpoints
 
-```
-.
-├── tasks-app/
-│   ├── backend/
-│   │   ├── api/
-│   │   │   ├── controllers/
-│   │   │   ├── models/
-│   │   │   └── routes/
-│   │   ├── config/
-│   │   ├── aws/
-│   │   │   └── task-definition.json
-│   │   ├── buildspec.yml
-│   │   ├── Dockerfile
-│   │   ├── package.json
-│   │   └── index.js
-│   └── frontend/
-│       ├── src/
-│       │   ├── components/
-│       │   ├── App.js
-│       │   └── index.js
-│       ├── public/
-│       ├── buildspec.yml
-│       └── package.json
-└── infrastructure/
-    └── pipeline/
-        └── codepipeline.yml
-```
+## 🏛️ Infrastructure
 
-## AWS Resources
+### Network Architecture
+- **VPC**: Default VPC or custom VPC
+- **Public Subnets**: 3 AZs for high availability
+- **Internet Gateway**: For ALB public access
+- **NAT Gateway**: For private resources outbound access
+- **VPC Endpoints**: S3, SSM, Secrets Manager (cost optimization)
 
-### Compute
-- **ECS Cluster**: `cluster-alb-tasks`
-- **ECS Service**: `service-alb-tasks`
-- **Task Definition**: `task-def-alb-tasks`
-- **EC2 Instances**: 2x t3.micro
+### Security Groups
+- **ALB SG**: Port 80 from 0.0.0.0/0
+- **ECS SG**: All ports from ALB SG
+- **RDS SG**: Port 5432 from ECS SG + CodeBuild SG
+- **CodeBuild SG**: Outbound to RDS and AWS services
 
-### Networking
-- **ALB**: `alb-tasks`
-- **Target Group**: `tg-bia`
-- **Health Check**: `/api/tasks` (30s interval)
-- **Deregistration Delay**: 30 seconds
+### Key Resources
+| Resource | Name/ID | Purpose |
+|----------|---------|---------|
+| ALB | `alb-tasks` | Load balancer for backend |
+| Target Group | `tg-tasks` | ECS tasks registration |
+| ECS Cluster | `cluster-alb-tasks` | Container orchestration |
+| ECS Service | `task-def-alb-tasks-service` | Service management |
+| RDS Instance | `tasks` | PostgreSQL database |
+| ECR Repository | `tasks-app-repo` | Docker images |
+| S3 Bucket | `tasks-app-frontend-<account-id>` | Frontend hosting |
 
-### Storage & Registry
-- **ECR Repository**: `tasks-app`
-- **S3 Bucket**: `tasks-app-frontend-prod`
-- **RDS Database**: PostgreSQL
+## 🚀 Getting Started
 
-### CI/CD
-- **Pipeline**: `tasks-pipeline-ecs`
-- **Backend Build**: `tasks-backend-build`
-- **Frontend Build**: `tasks-frontend-build`
+### Prerequisites
+- AWS Account with appropriate permissions
+- GitHub repository with AWS CodeConnections configured
+- AWS CLI configured locally
 
-### Configuration (SSM Parameters)
-- `/tasks-app/prod/ecr-repository-uri`
-- `/tasks-app/prod/ecs-cluster`
-- `/tasks-app/prod/ecs-service`
-- `/tasks-app/prod/api-url`
-- `/tasks-app/prod/db-username`
-- `/tasks-app/prod/db-password`
-- `/tasks-app/prod/db-host`
-- `/tasks-app/prod/db-name`
-- `/tasks-app/frontend/s3-bucket`
-
-## Deployment Flow
-
-### 1. Source Stage
-- Triggered by push to `main` branch
-- GitHub webhook notifies CodePipeline
-- Source code downloaded as artifact
-
-### 2. Build Stage (Parallel)
-
-#### Backend Build
-1. Login to Amazon ECR
-2. Build Docker image with commit hash tag
-3. Push to ECR (`:latest` and `:commit-hash`)
-4. Register new ECS task definition
-5. Update ECS service with new task definition
-6. Generate `imagedefinitions.json` artifact
-
-#### Frontend Build
-1. Fetch API URL from SSM Parameter Store
-2. Install npm dependencies
-3. Build React application (production mode)
-4. Sync build files to S3 bucket
-5. Generate build artifacts
-
-### 3. Deploy Stage
-- ECS performs rolling update (30s deregistration delay)
-- New tasks start with updated Docker image
-- Old tasks drain connections and terminate
-- Frontend immediately available on S3
-
-## Build Configuration
-
-### Backend (`tasks-app/backend/buildspec.yml`)
-
-```yaml
-version: 0.2
-
-phases:
-  pre_build:
-    commands:
-      - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - export IMAGE_TAG=${COMMIT_HASH:=latest}
-
-  build:
-    commands:
-      - cd tasks-app/backend
-      - docker build -t $ECR_REPOSITORY_URI:latest .
-      - docker tag $ECR_REPOSITORY_URI:latest $ECR_REPOSITORY_URI:$IMAGE_TAG
-
-  post_build:
-    commands:
-      - docker push $ECR_REPOSITORY_URI:latest
-      - docker push $ECR_REPOSITORY_URI:$IMAGE_TAG
-      - sed "s|IMAGE_TAG|$IMAGE_TAG|g" aws/task-definition.json > /tmp/task-def.json
-      - NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file:///tmp/task-def.json --query 'taskDefinition.taskDefinitionArn' --output text)
-      - aws ecs update-service --cluster $ECS_CLUSTER_NAME --service $ECS_SERVICE_NAME --task-definition $NEW_TASK_DEF_ARN
-      - printf '[{"name":"tasks","imageUri":"%s"}]' $ECR_REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-
-artifacts:
-  files:
-    - imagedefinitions.json
-
-env:
-  parameter-store:
-    ECR_REPOSITORY_URI: /tasks-app/prod/ecr-repository-uri
-    ECS_CLUSTER_NAME: /tasks-app/prod/ecs-cluster
-    ECS_SERVICE_NAME: /tasks-app/prod/ecs-service
+### Environment Variables (SSM Parameter Store)
+```bash
+/tasks-app/prod/ecr-repository-uri
+/tasks-app/prod/ecs-cluster
+/tasks-app/prod/ecs-service
+/tasks-app/prod/api-url
 ```
 
-### Frontend (`tasks-app/frontend/buildspec.yml`)
-
-```yaml
-version: 0.2
-
-phases:
-  install:
-    runtime-versions:
-      nodejs: 18
-
-  pre_build:
-    commands:
-      - export REACT_APP_API_URL=$(aws ssm get-parameter --name /tasks-app/prod/api-url --query Parameter.Value --output text)
-      - cd tasks-app/frontend
-      - npm install
-
-  build:
-    commands:
-      - export NODE_OPTIONS=--openssl-legacy-provider
-      - npm run build
-
-  post_build:
-    commands:
-      - aws s3 sync build/ s3://$S3_BUCKET_NAME --delete
-      - cd ../..
-
-artifacts:
-  files:
-    - tasks-app/frontend/build/**/*
-
-env:
-  variables:
-    NODE_ENV: production
-    GENERATE_SOURCEMAP: "false"
-    CI: "false"
-  parameter-store:
-    S3_BUCKET_NAME: /tasks-app/frontend/s3-bucket
+### Secrets (AWS Secrets Manager)
+```json
+{
+  "host": "<rds-endpoint>",
+  "port": "5432",
+  "dbname": "tasks",
+  "username": "postgres",
+  "password": "<secret>"
+}
 ```
 
-## Access URLs
+### Deployment
 
-- **Frontend**: http://tasks-app-frontend-prod.s3-website-us-east-1.amazonaws.com
-- **Backend API**: http://alb-tasks-480038577.us-east-1.elb.amazonaws.com
-- **Health Check**: http://alb-tasks-480038577.us-east-1.elb.amazonaws.com/api/tasks
+1. **Push to GitHub**
+   ```bash
+   git push origin main
+   ```
 
-## API Endpoints
+2. **Pipeline automatically triggers**
+   - Source stage: Pulls code from GitHub
+   - Build Backend: Builds Docker image, pushes to ECR, updates ECS
+   - Build Frontend: Builds React app, deploys to S3
 
-### Tasks (English)
+3. **Access the application**
+   - Frontend: `http://<s3-bucket-name>.s3-website-<region>.amazonaws.com`
+   - Backend API: `http://<alb-dns-name>/api/tasks`
+
+## 🔄 CI/CD Pipeline
+
+### Pipeline Stages
+
+#### 1. Source
+- **Trigger**: GitHub push to `main` branch
+- **Connection**: AWS CodeConnections (GitHub App)
+- **Output**: Source code artifact
+
+#### 2. Build Backend
+- **CodeBuild Project**: `tasks-app-backend-cicd`
+- **Steps**:
+  1. Login to ECR
+  2. Build Docker image
+  3. Tag with commit hash
+  4. Push to ECR
+  5. Register new ECS task definition
+  6. Update ECS service
+- **Buildspec**: `tasks-app/backend/buildspec.yml`
+
+#### 3. Build Frontend
+- **CodeBuild Project**: `tasks-app-frontend-cicd`
+- **Steps**:
+  1. Install dependencies
+  2. Build React app
+  3. Sync to S3 bucket
+- **Buildspec**: `tasks-app/frontend/buildspec.yml`
+
+### Build Configuration
+
+**Backend Build Environment**:
+- Image: `aws/codebuild/amazonlinux-x86_64-standard:5.0`
+- Privileged mode: Enabled (for Docker)
+- VPC: Enabled (for RDS access)
+
+**Frontend Build Environment**:
+- Image: `aws/codebuild/standard:7.0`
+- Node.js 18
+
+## 🗄️ Database Migrations
+
+### Running Migrations
+
+Migrations are managed with Sequelize CLI and can be run via CodeBuild Session Manager:
+
+1. **Start a build with Session Manager enabled**
+2. **Connect to the build container**
+3. **Run migrations**:
+   ```bash
+   cd tasks-app/backend
+   
+   # Export database credentials
+   SECRET=$(aws secretsmanager get-secret-value --secret-id tasks-app/prod-ci-cd/database --region us-east-1 --query SecretString --output text)
+   export DB_HOST=$(echo $SECRET | jq -r .host)
+   export DB_PORT=$(echo $SECRET | jq -r .port)
+   export DB_NAME=$(echo $SECRET | jq -r .dbname)
+   export DB_USERNAME=$(echo $SECRET | jq -r .username)
+   export DB_PASSWORD=$(echo $SECRET | jq -r .password)
+   export NODE_ENV=production
+   
+   # Run migrations
+   npx sequelize-cli db:migrate
+   ```
+
+### Migration Files
+- Location: `tasks-app/backend/database/migrations/`
+- Configuration: `tasks-app/backend/.sequelizerc`
+- Config file: `tasks-app/backend/config/config.js`
+
+### Creating New Migrations
+```bash
+npx sequelize-cli migration:generate --name migration-name
+```
+
+## 📊 Monitoring
+
+### CloudWatch Logs
+- **ECS Tasks**: `/ecs/task-def-alb-tasks`
+- **CodeBuild Backend**: `/aws/codebuild/tasks-app-backend-cicd`
+- **CodeBuild Frontend**: `/aws/codebuild/tasks-app-frontend-cicd`
+
+### Health Checks
+- **ALB Health Check**: `GET /` (accepts 200-499)
+- **Target Health**: Monitored every 30 seconds
+- **Healthy Threshold**: 2 consecutive successes
+- **Unhealthy Threshold**: 3 consecutive failures
+
+### Viewing Logs
+```bash
+# ECS logs
+aws logs tail /ecs/task-def-alb-tasks --follow --region us-east-1
+
+# CodeBuild logs
+aws logs tail /aws/codebuild/tasks-app-backend-cicd --follow --region us-east-1
+```
+
+## 💰 Cost Optimization
+
+### Current Setup
+- **ECS**: 2 t2.micro instances (~$15/month)
+- **RDS**: db.t3.micro (~$15/month)
+- **ALB**: ~$20/month
+- **NAT Gateway**: ~$35/month
+- **VPC Endpoints**: ~$7/month each (5 endpoints = ~$35/month)
+- **Total**: ~$120/month
+
+### Stopping Infrastructure When Not in Use
+
+```bash
+# Stop ECS tasks
+aws ecs update-service --cluster cluster-alb-tasks --service task-def-alb-tasks-service --desired-count 0 --region us-east-1
+
+# Stop RDS
+aws rds stop-db-instance --db-instance-identifier tasks --region us-east-1
+
+# Scale down Auto Scaling Group
+aws autoscaling update-auto-scaling-group --auto-scaling-group-name <ASG_NAME> --min-size 0 --max-size 0 --desired-capacity 0 --region us-east-1
+```
+
+### Starting Infrastructure
+
+```bash
+# Start RDS
+aws rds start-db-instance --db-instance-identifier tasks --region us-east-1
+
+# Scale up Auto Scaling Group
+aws autoscaling update-auto-scaling-group --auto-scaling-group-name <ASG_NAME> --min-size 2 --max-size 2 --desired-capacity 2 --region us-east-1
+
+# ECS service will automatically start tasks
+```
+
+### Cost Saving Tips
+- ✅ Use VPC Endpoints instead of NAT Gateway for AWS services
+- ✅ Stop RDS when not in use (saves ~50%)
+- ✅ Use t3.micro instead of t2.micro (better performance/cost)
+- ✅ Enable S3 lifecycle policies for old artifacts
+- ✅ Use CloudWatch Logs retention policies
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. ALB Returns 503
+- Check target health: `aws elbv2 describe-target-health --target-group-arn <TG_ARN>`
+- Verify ECS tasks are running: `aws ecs list-tasks --cluster cluster-alb-tasks`
+- Check security groups allow ALB → ECS traffic
+
+#### 2. CodeBuild Timeout
+- Verify VPC Endpoints are available
+- Check CodeBuild security group allows outbound HTTPS
+- Ensure subnets have proper routing (NAT or IGW)
+
+#### 3. Database Connection Failed
+- Verify RDS is running: `aws rds describe-db-instances --db-instance-identifier tasks`
+- Check RDS security group allows ECS SG on port 5432
+- Verify Secrets Manager credentials are correct
+
+#### 4. Frontend Can't Connect to Backend
+- Verify ALB DNS is correct in frontend environment
+- Check ALB is in public subnets with IGW route
+- Verify ALB security group allows port 80 from 0.0.0.0/0
+
+## 📝 API Endpoints
+
+### Tasks API
 - `GET /api/tasks` - List all tasks
 - `POST /api/tasks` - Create new task
 - `GET /api/tasks/:uuid` - Get task by ID
-- `PUT /api/tasks/update_priority/:uuid` - Update task priority
 - `DELETE /api/tasks/:uuid` - Delete task
+- `PUT /api/tasks/update_priority/:uuid` - Update task priority
 
-### Tarefas (Portuguese)
-- `GET /api/tarefas` - List all tasks
-- `POST /api/tarefas` - Create new task
-- `GET /api/tarefas/:uuid` - Get task by ID
-- `PUT /api/tarefas/update_priority/:uuid` - Update task priority
-- `DELETE /api/tarefas/:uuid` - Delete task
+### Portuguese Routes (Legacy)
+- `GET /api/tarefas`
+- `POST /api/tarefas`
+- `GET /api/tarefas/:uuid`
+- `DELETE /api/tarefas/:uuid`
+- `PUT /api/tarefas/update_priority/:uuid`
 
-## Troubleshooting
+## 🤝 Contributing
 
-### Pipeline Failures
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-#### Check Pipeline Status
-```bash
-aws codepipeline get-pipeline-state \
-  --name tasks-pipeline-ecs \
-  --region us-east-1 \
-  --query 'stageStates[*].{Stage:stageName,Status:latestExecution.status}' \
-  --output table
-```
+## 📄 License
 
-#### Get Build Logs (Backend)
-```bash
-BUILD_ID=$(aws codebuild list-builds-for-project \
-  --project-name tasks-backend-build \
-  --region us-east-1 \
-  --sort-order DESCENDING \
-  --query 'ids[0]' \
-  --output text)
+This project is licensed under the MIT License.
 
-aws codebuild batch-get-builds \
-  --ids $BUILD_ID \
-  --region us-east-1 \
-  --query 'builds[0].logs.streamName' \
-  --output text | xargs -I {} \
-  aws logs get-log-events \
-  --log-group-name "/aws/codebuild/tasks-backend-build" \
-  --log-stream-name {} \
-  --region us-east-1 \
-  --start-from-head \
-  --query 'events[*].message' \
-  --output text
-```
+## 👥 Authors
 
-#### Get Build Logs (Frontend)
-```bash
-BUILD_ID=$(aws codebuild list-builds-for-project \
-  --project-name tasks-frontend-build \
-  --region us-east-1 \
-  --sort-order DESCENDING \
-  --query 'ids[0]' \
-  --output text)
+- Your name here
 
-aws codebuild batch-get-builds \
-  --ids $BUILD_ID \
-  --region us-east-1 \
-  --query 'builds[0].logs.streamName' \
-  --output text | xargs -I {} \
-  aws logs get-log-events \
-  --log-group-name "/aws/codebuild/tasks-frontend-build" \
-  --log-stream-name {} \
-  --region us-east-1 \
-  --start-from-head \
-  --query 'events[*].message' \
-  --output text
-```
+## 🙏 Acknowledgments
 
-### ECS Deployment Issues
+- AWS Documentation
+- Sequelize ORM
+- React Community
+- Express.js Team
 
-#### Check Service Status
-```bash
-aws ecs describe-services \
-  --cluster cluster-alb-tasks \
-  --services service-alb-tasks \
-  --region us-east-1 \
-  --query 'services[0].deployments[*].{Status:status,TaskDef:taskDefinition,Running:runningCount,Desired:desiredCount}' \
-  --output table
-```
+---
 
-#### Check Service Events
-```bash
-aws ecs describe-services \
-  --cluster cluster-alb-tasks \
-  --services service-alb-tasks \
-  --region us-east-1 \
-  --query 'services[0].events[:10].{Time:createdAt,Message:message}' \
-  --output table
-```
+**Live URLs:**
+- 🌐 Frontend: `http://<s3-bucket-name>.s3-website-<region>.amazonaws.com`
+- 🔌 Backend API: `http://<alb-dns-name>/api/tasks`
+- 📊 Pipeline: AWS Console → CodePipeline
 
-#### Check Task Failures
-```bash
-TASK_ARN=$(aws ecs list-tasks \
-  --cluster cluster-alb-tasks \
-  --desired-status STOPPED \
-  --region us-east-1 \
-  --query 'taskArns[0]' \
-  --output text)
-
-aws ecs describe-tasks \
-  --cluster cluster-alb-tasks \
-  --tasks $TASK_ARN \
-  --region us-east-1 \
-  --query 'tasks[0].{StoppedReason:stoppedReason,Container:containers[0].reason}' \
-  --output json
-```
-
-#### View Container Logs
-```bash
-aws logs tail /ecs/task-def-alb-tasks \
-  --follow \
-  --region us-east-1
-```
-
-### ECR Issues
-
-#### List Images
-```bash
-aws ecr describe-images \
-  --repository-name tasks-app \
-  --region us-east-1 \
-  --query 'sort_by(imageDetails, &imagePushedAt)[-5:].{Tags:imageTags,Pushed:imagePushedAt}' \
-  --output table
-```
-
-#### Check Latest Image
-```bash
-aws ecr describe-images \
-  --repository-name tasks-app \
-  --region us-east-1 \
-  --query 'sort_by(imageDetails, &imagePushedAt)[-1].imageTags' \
-  --output json
-```
-
-### S3 Frontend Issues
-
-#### List Bucket Contents
-```bash
-aws s3 ls s3://tasks-app-frontend-prod/ --recursive --human-readable
-```
-
-#### Check Bucket Website Configuration
-```bash
-aws s3api get-bucket-website \
-  --bucket tasks-app-frontend-prod \
-  --region us-east-1
-```
-
-#### Verify Public Access
-```bash
-aws s3api get-public-access-block \
-  --bucket tasks-app-frontend-prod \
-  --region us-east-1
-```
-
-### CORS Issues
-
-#### Test CORS Headers
-```bash
-curl -I -X OPTIONS \
-  http://alb-tasks-480038577.us-east-1.elb.amazonaws.com/api/tasks \
-  -H "Origin: http://tasks-app-frontend-prod.s3-website-us-east-1.amazonaws.com" \
-  -H "Access-Control-Request-Method: GET"
-```
-
-#### Check Backend Response Headers
-```bash
-curl -v http://alb-tasks-480038577.us-east-1.elb.amazonaws.com/api/tasks \
-  -H "Origin: http://test.com" 2>&1 | grep -i "access-control"
-```
-
-### Database Connection Issues
-
-#### Test Database Connectivity
-```bash
-# From ECS task (exec into container)
-aws ecs execute-command \
-  --cluster cluster-alb-tasks \
-  --task <TASK_ID> \
-  --container tasks \
-  --interactive \
-  --command "/bin/sh"
-
-# Inside container
-nc -zv <DB_HOST> 5432
-```
-
-#### Check SSM Parameters
-```bash
-aws ssm get-parameter \
-  --name /tasks-app/prod/db-host \
-  --region us-east-1 \
-  --query 'Parameter.Value' \
-  --output text
-```
-
-## Useful Scripts
-
-### Force New Deployment
-```bash
-aws ecs update-service \
-  --cluster cluster-alb-tasks \
-  --service service-alb-tasks \
-  --force-new-deployment \
-  --region us-east-1
-```
-
-### Restart Pipeline
-```bash
-aws codepipeline start-pipeline-execution \
-  --name tasks-pipeline-ecs \
-  --region us-east-1
-```
-
-### Update SSM Parameter
-```bash
-# Update API URL
-aws ssm put-parameter \
-  --name /tasks-app/prod/api-url \
-  --value "https://api.yourdomain.com" \
-  --overwrite \
-  --region us-east-1
-```
-
-### Scale ECS Service
-```bash
-aws ecs update-service \
-  --cluster cluster-alb-tasks \
-  --service service-alb-tasks \
-  --desired-count 3 \
-  --region us-east-1
-```
-
-### Update Target Group Deregistration Delay
-```bash
-TG_ARN=$(aws elbv2 describe-target-groups \
-  --names tg-bia \
-  --region us-east-1 \
-  --query 'TargetGroups[0].TargetGroupArn' \
-  --output text)
-
-aws elbv2 modify-target-group-attributes \
-  --target-group-arn $TG_ARN \
-  --attributes Key=deregistration_delay.timeout_seconds,Value=30 \
-  --region us-east-1
-```
-
-### Clean Up Old ECR Images
-```bash
-# Keep only last 10 images
-aws ecr list-images \
-  --repository-name tasks-app \
-  --region us-east-1 \
-  --query 'imageIds[:-10]' \
-  --output json | jq -r '.[] | .imageDigest' | \
-  xargs -I {} aws ecr batch-delete-image \
-  --repository-name tasks-app \
-  --image-ids imageDigest={} \
-  --region us-east-1
-```
-
-## Performance Optimization
-
-### Backend
-- **Container Resources**: 1024 CPU units, 512 MB memory reservation
-- **Health Check**: 30s interval, 2 consecutive successes required
-- **Deregistration Delay**: 30s (reduced from 300s default)
-- **Docker Image**: Using public ECR to avoid Docker Hub rate limits
-
-### Frontend
-- **Build Optimization**: Source maps disabled in production
-- **S3 Sync**: `--delete` flag removes old files
-- **Node Options**: `--openssl-legacy-provider` for Webpack 4 compatibility
-
-## Security Best Practices
-
-### Secrets Management
-- Database credentials stored in SSM Parameter Store (SecureString)
-- No hardcoded secrets in code or buildspecs
-- IAM roles with least privilege access
-
-### Network Security
-- Backend in private subnets (via ECS)
-- ALB in public subnets
-- Security groups restrict traffic flow
-- CORS configured for frontend origin
-
-### Container Security
-- Using official Node.js Alpine images
-- Regular image updates via CI/CD
-- No root user in containers
-
-## Monitoring
-
-### CloudWatch Logs
-- **Backend Logs**: `/ecs/task-def-alb-tasks`
-- **Backend Build**: `/aws/codebuild/tasks-backend-build`
-- **Frontend Build**: `/aws/codebuild/tasks-frontend-build`
-
-### Metrics to Monitor
-- ECS CPU/Memory utilization
-- ALB target health
-- Request count and latency
-- 4xx/5xx error rates
-- Build success/failure rates
-
-## Cost Optimization
-
-### Current Resources
-- 2x t3.micro EC2 instances (ECS)
-- 1x Application Load Balancer
-- 1x RDS PostgreSQL (db.t3.micro)
-- S3 Standard storage
-- ECR storage (pay per GB)
-
-### Optimization Tips
-- Use ECR lifecycle policies to delete old images
-- Enable S3 lifecycle policies for old frontend versions
-- Consider Fargate for variable workloads
-- Use Reserved Instances for predictable workloads
-
-## Future Enhancements
-
-- [ ] Add CloudFront distribution for frontend
-- [ ] Implement custom domain with Route 53
-- [ ] Add SSL/TLS certificates (ACM)
-- [ ] Implement blue/green deployments
-- [ ] Add automated testing in pipeline
-- [ ] Implement container insights
-- [ ] Add X-Ray tracing
-- [ ] Implement auto-scaling policies
-- [ ] Add CloudWatch alarms and SNS notifications
-- [ ] Implement backup strategy for RDS
-
-## Contributing
-
-1. Create feature branch from `main`
-2. Make changes and test locally
-3. Push to GitHub
-4. Pipeline automatically deploys to production
-5. Monitor deployment in AWS Console
-
-## License
-
-This project is part of a DevOps training challenge.
-
-## Support
-
-For issues or questions, check the troubleshooting section above or review CloudWatch logs for detailed error messages.
-# aws-ecs-tasks-app-fullstack-cicd
+**Built with ❤️ using AWS**
