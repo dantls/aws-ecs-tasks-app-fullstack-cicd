@@ -16,38 +16,28 @@ A production-ready task management application with automated CI/CD pipeline, de
 
 ## 🏗️ Architecture
 
-```
-┌─────────────┐
-│   GitHub    │
-│  Repository │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────┐
-│              AWS CodePipeline                            │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Source  │─▶│ Build Backend│─▶│Build Frontend│     │
-│  └──────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────┘
-       │                    │                │
-       ▼                    ▼                ▼
-┌─────────────┐    ┌──────────────┐   ┌──────────┐
-│     ECR     │    │  ECS Cluster │   │    S3    │
-│  (Backend)  │    │  (EC2 Type)  │   │(Frontend)│
-└─────────────┘    └──────┬───────┘   └──────────┘
-                          │
-                          ▼
-                   ┌─────────────┐
-                   │     ALB     │
-                   │  (Port 80)  │
-                   └──────┬──────┘
-                          │
-                          ▼
-                   ┌─────────────┐
-                   │     RDS     │
-                   │ PostgreSQL  │
-                   └─────────────┘
-```
+![AWS Infrastructure Architecture](docs/architecture-diagram.png)
+
+### Architecture Overview
+
+The application follows a modern cloud-native architecture with complete CI/CD automation:
+
+**Source & CI/CD Flow:**
+- GitHub repository triggers CodePipeline via CodeConnections
+- CodeBuild compiles backend (Docker) and frontend (React)
+- Backend images pushed to ECR, frontend deployed to S3
+- ECS service automatically updated with new task definitions
+
+**Application Flow:**
+- Users access static frontend from S3
+- API requests routed through Application Load Balancer
+- ALB distributes traffic to ECS tasks across multiple AZs
+- ECS containers connect to RDS PostgreSQL database
+
+**Network Architecture:**
+- VPC with 3 public subnets across different Availability Zones
+- Security Groups controlling traffic between components
+- High availability with multi-AZ deployment
 
 ## ✨ Features
 
